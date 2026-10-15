@@ -1,0 +1,22 @@
+model Education {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  institution String
+  course      String
+  degree      EducationDegree?
+  description String?          @db.Text
+  startedAt   DateTime
+  endedAt     DateTime?
+  expectedEnd DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@map("educations")
+}
+
+enum EducationDegree {
+  GRADUACAO
+  POS
+  TECNICO
+  CURSO_LIVRE
+  CERTIFICACAO
+}

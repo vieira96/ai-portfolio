@@ -1,0 +1,22 @@
+model Project {
+  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  description   String              @db.Text
+  repositoryUrl String?
+  demoUrl       String?
+  technologies  ProjectTechnology[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@map("projects")
+}
+
+model ProjectTechnology {
+  projectId    String     @db.Uuid
+  technologyId String     @db.Uuid
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  technology   Technology @relation(fields: [technologyId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, technologyId])
+  @@map("project_technologies")
+}

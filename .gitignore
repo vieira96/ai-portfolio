@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+!.env.example
+backend/node_modules/
+backend/dist/
+backend/src/generated/
+frontend/.next/
+backend/coverage/
+postgres-data/
+redis-data/
+*.log
+*.tsbuildinfo
+.DS_Store
+.opencode/
+AGENTS.md

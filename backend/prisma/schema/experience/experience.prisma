@@ -1,0 +1,23 @@
+model Experience {
+  id           String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  company      String
+  position     String
+  description  String                @db.Text
+  startedAt    DateTime
+  endedAt      DateTime?
+  technologies ExperienceTechnology[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  @@map("experiences")
+}
+
+model ExperienceTechnology {
+  experienceId String     @db.Uuid
+  technologyId String     @db.Uuid
+  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  technology   Technology @relation(fields: [technologyId], references: [id], onDelete: Cascade)
+
+  @@id([experienceId, technologyId])
+  @@map("experience_technologies")
+}

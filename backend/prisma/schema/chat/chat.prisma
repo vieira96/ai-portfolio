@@ -1,0 +1,17 @@
+model ChatMessage {
+  id        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  visitorId String
+  question  String
+  answer    String?           @db.Text
+  status    ChatMessageStatus @default(pending)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@map("chat_messages")
+}
+
+enum ChatMessageStatus {
+  pending
+  done
+  failed
+}
