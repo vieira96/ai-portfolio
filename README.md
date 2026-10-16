@@ -1,13 +1,16 @@
 # Portfolio AI Agent
 
-Portfólio profissional com área pública, dashboard administrativo e chat com
-IA. O projeto é dividido em uma API NestJS e uma aplicação Next.js.
+Portfólio profissional com área pública, dashboard administrativo, editor de
+currículo ATS e chat com IA. O dashboard também oferece assistência de escrita
+com IA para revisar Bio, headline e descrições de experiências e projetos; a
+sugestão só altera o formulário após confirmação.
 
 ## Stack
 
 - Backend: NestJS, TypeScript, Prisma, PostgreSQL, Redis, BullMQ e Vitest
 - Frontend: Next.js, React, TypeScript, Tailwind CSS e Vitest
-- IA: Ollama ou Groq, com fallback configurável
+- IA: Groq, Gemini e Ollama, com cadeia configurável e fallback para limites de
+  uso e payload excedido
 - Infraestrutura local: Docker Compose
 
 ## Arquitetura atual
@@ -18,16 +21,18 @@ Browser
    ├── Next.js /api/* ──────► NestJS API ──────► Prisma ──────► PostgreSQL
    │                              │
    │                              ├── Redis / BullMQ
-   │                              ├── Ollama ou Groq
+   │                              ├── LLMs (Groq → Gemini → Ollama, conforme configuração)
+   │                              ├── assistência de escrita autenticada
    │                              └── Socket.IO para o chat
    │
    └── Chat Socket.IO ──────► NestJS
 ```
 
-O frontend funciona como BFF para autenticação e operações administrativas.
-O widget de chat se conecta diretamente à API para receber eventos em tempo
-real. A autenticação usa cookie `httpOnly`; o chat público usa o cookie
-anônimo `chat_visitor`.
+O frontend funciona como BFF para autenticação, operações administrativas e
+assistência de escrita. Essa assistência usa o texto do campo selecionado e
+não salva a sugestão automaticamente. O widget de chat se conecta diretamente
+à API para receber eventos em tempo real. A autenticação usa cookie `httpOnly`;
+o chat público usa o cookie anônimo `chat_visitor`.
 
 ## Estrutura
 
@@ -69,24 +74,19 @@ Backend:
 
 ```bash
 cd backend
-npm run build
+npm test
 npm run lint
-npm run test:unit
+npm run build
 ```
 
-Integração e E2E usam Testcontainers e precisam de Docker:
-
-```bash
-cd backend
-npm run test:integration
-npm run test:e2e
-```
+`npm test` executa testes unitários, integração e E2E. Integração e E2E usam
+Testcontainers e precisam de Docker.
 
 Frontend:
 
 ```bash
 cd frontend
-npm run build
-npm run lint
 npm test
+npm run lint
+npm run build
 ```

@@ -30,6 +30,6 @@ documentação do comportamento já implementado fica nos READMEs de
 - [x] Permitir visualizar e exportar o currículo gerado
 - [x] Permitir editar tudo que aparece no currículo (nome, experiências, skills e demais campos) sem alterar os dados cadastrados
 
-### Dicas de melhoria com IA
+### Assistência de escrita no dashboard
 
-- [ ] Permitir que a pessoa solicite dicas para melhorar o conteúdo do currículo, sem gerar ou aplicar alterações automaticamente
+- [x] Permitir solicitar à IA uma sugestão de texto mais clara e profissional para Bio, headline, descrição de experiência e descrição de projeto, com aplicação somente após confirmação da pessoa

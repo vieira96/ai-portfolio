@@ -1,42 +1,42 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ExperienceForm } from './experience-form.js';
-import type { Skill } from '@/types/skills/skills.types';
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ExperienceForm } from "./experience-form.js";
+import type { Skill } from "@/types/skills/skills.types";
 
 const knownSkills: Skill[] = [
-  { id: '1', name: 'NestJS', category: 'BACKEND' },
-  { id: '2', name: 'React', category: 'FRONTEND' },
+  { id: "1", name: "NestJS", category: "BACKEND" },
+  { id: "2", name: "React", category: "FRONTEND" },
 ];
 
 function savedExperienceWith(technologies: Skill[]) {
   return {
-    id: 'e1',
-    company: 'Levante Lab',
-    position: 'Backend Developer',
-    description: 'APIs com NestJS e PostgreSQL.',
-    startedAt: '2023-01-15',
+    id: "e1",
+    company: "Levante Lab",
+    position: "Backend Developer",
+    description: "APIs com NestJS e PostgreSQL.",
+    startedAt: "2023-01-15",
     endedAt: null,
     technologies,
-    createdAt: '',
-    updatedAt: '',
+    createdAt: "",
+    updatedAt: "",
   };
 }
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
 }
 
-describe('ExperienceForm', () => {
+describe("ExperienceForm", () => {
   const onSkillsCreated = vi.fn();
   const onSaved = vi.fn();
   const onClose = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('fetch', vi.fn());
+    vi.stubGlobal("fetch", vi.fn());
   });
 
   function renderForm() {
@@ -52,63 +52,88 @@ describe('ExperienceForm', () => {
   }
 
   function fillForm() {
-    fireEvent.change(screen.getByPlaceholderText('Ex: Levante Lab'), {
-      target: { value: 'Levante Lab' },
+    fireEvent.change(screen.getByPlaceholderText("Ex: Levante Lab"), {
+      target: { value: "Levante Lab" },
     });
-    fireEvent.change(screen.getByPlaceholderText('Ex: Backend Developer'), {
-      target: { value: 'Backend Developer' },
+    fireEvent.change(screen.getByPlaceholderText("Ex: Backend Developer"), {
+      target: { value: "Backend Developer" },
     });
-    fireEvent.change(screen.getByLabelText('Descrição'), {
-      target: { value: 'APIs com NestJS e PostgreSQL.' },
+    fireEvent.change(screen.getByLabelText("Descrição"), {
+      target: { value: "APIs com NestJS e PostgreSQL." },
     });
-    fireEvent.change(screen.getByLabelText('Início'), {
-      target: { value: '2023-01-15' },
+    fireEvent.change(screen.getByLabelText("Início"), {
+      target: { value: "2023-01-15" },
     });
   }
+
+  it("applies an AI suggestion to the experience description only on confirmation", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse(201, { suggestion: "Descrição revisada da experiência." }),
+    );
+    renderForm();
+    fireEvent.change(screen.getByLabelText("Descrição"), {
+      target: { value: "Desenvolvimento de APIs com NestJS e PostgreSQL." },
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Aprimorar texto com IA" }),
+    );
+    expect(
+      await screen.findByText("Descrição revisada da experiência."),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Descrição")).toHaveValue(
+      "Desenvolvimento de APIs com NestJS e PostgreSQL.",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Usar sugestão" }));
+    expect(screen.getByLabelText("Descrição")).toHaveValue(
+      "Descrição revisada da experiência.",
+    );
+  });
 
   function skillsDisplay() {
-    return screen.getByRole('combobox', {
-      name: 'Selecione ou digite uma ou mais habilidade(s)',
+    return screen.getByRole("combobox", {
+      name: "Selecione ou digite uma ou mais habilidade(s)",
     });
   }
 
-  it('shows validation errors without submitting', async () => {
+  it("shows validation errors without submitting", async () => {
     renderForm();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
     await waitFor(() => {
       expect(
-        screen.getByText('Empresa precisa de ao menos 2 caracteres.'),
+        screen.getByText("Empresa precisa de ao menos 2 caracteres."),
       ).toBeInTheDocument();
       expect(fetch).not.toHaveBeenCalled();
     });
   });
 
-  it('clears the field error once the user fixes the input', async () => {
+  it("clears the field error once the user fixes the input", async () => {
     renderForm();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
     await waitFor(() => {
       expect(
-        screen.getByText('Empresa precisa de ao menos 2 caracteres.'),
+        screen.getByText("Empresa precisa de ao menos 2 caracteres."),
       ).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByPlaceholderText('Ex: Levante Lab'), {
-      target: { value: 'Levante Lab' },
+    fireEvent.change(screen.getByPlaceholderText("Ex: Levante Lab"), {
+      target: { value: "Levante Lab" },
     });
 
     await waitFor(() => {
       expect(
-        screen.queryByText('Empresa precisa de ao menos 2 caracteres.'),
+        screen.queryByText("Empresa precisa de ao menos 2 caracteres."),
       ).not.toBeInTheDocument();
     });
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('submits known skills with ids and notifies', async () => {
+  it("submits known skills with ids and notifies", async () => {
     vi.mocked(fetch).mockResolvedValue(
       jsonResponse(201, savedExperienceWith([knownSkills[0]])),
     );
@@ -116,21 +141,21 @@ describe('ExperienceForm', () => {
 
     fillForm();
     fireEvent.click(skillsDisplay());
-    fireEvent.click(screen.getByRole('option', { name: 'NestJS' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    fireEvent.click(screen.getByRole("option", { name: "NestJS" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith(
-        '/api/experiences',
+        "/api/experiences",
         expect.objectContaining({
-          method: 'POST',
+          method: "POST",
           body: JSON.stringify({
-            company: 'Levante Lab',
-            position: 'Backend Developer',
-            description: 'APIs com NestJS e PostgreSQL.',
-            startedAt: '2023-01-15',
+            company: "Levante Lab",
+            position: "Backend Developer",
+            description: "APIs com NestJS e PostgreSQL.",
+            startedAt: "2023-01-15",
             endedAt: null,
-            skills: [{ id: '1', name: 'NestJS', category: 'BACKEND' }],
+            skills: [{ id: "1", name: "NestJS", category: "BACKEND" }],
           }),
         }),
       );
@@ -140,8 +165,8 @@ describe('ExperienceForm', () => {
     });
   });
 
-  it('asks the category of unknown skills before posting', async () => {
-    const created = { id: '9', name: 'Rust', category: 'BACKEND' } as Skill;
+  it("asks the category of unknown skills before posting", async () => {
+    const created = { id: "9", name: "Rust", category: "BACKEND" } as Skill;
     vi.mocked(fetch).mockResolvedValue(
       jsonResponse(201, savedExperienceWith([created])),
     );
@@ -157,34 +182,32 @@ describe('ExperienceForm', () => {
 
     fillForm();
     fireEvent.click(skillsDisplay());
-    fireEvent.change(screen.getByLabelText('Buscar skills'), {
-      target: { value: 'Rust' },
+    fireEvent.change(screen.getByLabelText("Buscar skills"), {
+      target: { value: "Rust" },
     });
-    fireEvent.click(screen.getByRole('option', { name: 'Habilidade nova' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    fireEvent.click(screen.getByRole("option", { name: "Habilidade nova" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
     await waitFor(() => {
-      expect(
-        screen.getByText('Categorizar novas skills'),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Categorizar novas skills")).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText('Categoria de Rust'), {
-      target: { value: 'BACKEND' },
+    fireEvent.change(screen.getByLabelText("Categoria de Rust"), {
+      target: { value: "BACKEND" },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar e salvar' }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar e salvar" }));
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith(
-        '/api/experiences',
+        "/api/experiences",
         expect.objectContaining({
           body: JSON.stringify({
-            company: 'Levante Lab',
-            position: 'Backend Developer',
-            description: 'APIs com NestJS e PostgreSQL.',
-            startedAt: '2023-01-15',
+            company: "Levante Lab",
+            position: "Backend Developer",
+            description: "APIs com NestJS e PostgreSQL.",
+            startedAt: "2023-01-15",
             endedAt: null,
-            skills: [{ name: 'Rust', category: 'BACKEND' }],
+            skills: [{ name: "Rust", category: "BACKEND" }],
           }),
         }),
       );
@@ -192,10 +215,10 @@ describe('ExperienceForm', () => {
     });
   });
 
-  it('closes without submitting on Cancelar', () => {
+  it("closes without submitting on Cancelar", () => {
     renderForm();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
 
     expect(onClose).toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();

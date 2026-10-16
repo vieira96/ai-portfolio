@@ -1,18 +1,19 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/shadcn/button';
-import { Input } from '@/components/ui/shadcn/input';
-import { Textarea } from '@/components/ui/shadcn/textarea';
-import { NewSkillsModal } from '@/components/skills/modals/new-skills-modal';
+import { useState } from "react";
+import { Button } from "@/components/ui/shadcn/button";
+import { Input } from "@/components/ui/shadcn/input";
+import { Textarea } from "@/components/ui/shadcn/textarea";
+import { NewSkillsModal } from "@/components/skills/modals/new-skills-modal";
 import {
   SkillsSelection,
   findKnownSkill,
   type SelectedSkill,
-} from '@/components/skills/inputs/skills-selection';
-import type { Skill, SkillCategory } from '@/types/skills/skills.types';
-import type { Project } from '@/types/projects/projects.types';
-import { projectSchema } from '../modals/project.schema';
+} from "@/components/skills/inputs/skills-selection";
+import type { Skill, SkillCategory } from "@/types/skills/skills.types";
+import type { Project } from "@/types/projects/projects.types";
+import { projectSchema } from "../modals/project.schema";
+import { WritingAssistance } from "@/components/ai/writing-assistance/writing-assistance";
 
 interface ProjectFormProps {
   project?: Project | null;
@@ -77,12 +78,12 @@ export function ProjectForm({
   onSaved,
   onClose,
 }: ProjectFormProps) {
-  const [name, setName] = useState(project?.name ?? '');
-  const [description, setDescription] = useState(project?.description ?? '');
+  const [name, setName] = useState(project?.name ?? "");
+  const [description, setDescription] = useState(project?.description ?? "");
   const [repositoryUrl, setRepositoryUrl] = useState(
-    project?.repositoryUrl ?? '',
+    project?.repositoryUrl ?? "",
   );
-  const [demoUrl, setDemoUrl] = useState(project?.demoUrl ?? '');
+  const [demoUrl, setDemoUrl] = useState(project?.demoUrl ?? "");
   const [selected, setSelected] = useState<SelectedSkill[]>(() =>
     (project?.technologies ?? []).map((item) => ({
       id: item.id,
@@ -125,15 +126,15 @@ export function ProjectForm({
       body.skills = skillsToSend;
     }
 
-    const url = editing ? `/api/projects/${project?.id}` : '/api/projects';
+    const url = editing ? `/api/projects/${project?.id}` : "/api/projects";
     const response = await fetch(url, {
-      method: editing ? 'PATCH' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: editing ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
     if (!response.ok) {
-      setError('Não foi possível salvar. Tente novamente.');
+      setError("Não foi possível salvar. Tente novamente.");
       return null;
     }
 
@@ -149,7 +150,7 @@ export function ProjectForm({
     try {
       await submitWithSkills(skillsToSend);
     } catch {
-      setError('Não foi possível salvar. Tente novamente.');
+      setError("Não foi possível salvar. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -165,7 +166,7 @@ export function ProjectForm({
     if (!parsed.success) {
       const errors: Record<string, string> = {};
       for (const issue of parsed.error.issues) {
-        const key = String(issue.path[0] ?? '');
+        const key = String(issue.path[0] ?? "");
         if (key && !errors[key]) {
           errors[key] = issue.message;
         }
@@ -195,9 +196,7 @@ export function ProjectForm({
     setPendingUnknown(unknown.map((item) => item.name));
   }
 
-  async function handleConfirmNewSkills(
-    categorized: ProjectSkillSubmit[],
-  ) {
+  async function handleConfirmNewSkills(categorized: ProjectSkillSubmit[]) {
     setSaving(true);
     try {
       const saved = await submitWithSkills(
@@ -207,7 +206,7 @@ export function ProjectForm({
         setPendingUnknown(null);
       }
     } catch {
-      setError('Não foi possível salvar. Tente novamente.');
+      setError("Não foi possível salvar. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -233,7 +232,7 @@ export function ProjectForm({
             value={name}
             onChange={(event) => {
               setName(event.target.value);
-              clearFieldError('name');
+              clearFieldError("name");
             }}
             placeholder="Ex: Auth API"
             className="h-auto border-line bg-surface px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-0 dark:bg-surface"
@@ -243,23 +242,29 @@ export function ProjectForm({
           )}
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="text-slate-400">Descrição</span>
-          <Textarea
-            rows={3}
-            value={description}
-            onChange={(event) => {
-              setDescription(event.target.value);
-              clearFieldError('description');
-            }}
-            className="border-line bg-surface px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 min-h-0 focus-visible:border-blue-400 focus-visible:ring-0 dark:bg-surface"
-          />
+        <div className="sm:col-span-2">
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="text-slate-400">Descrição</span>
+            <Textarea
+              rows={3}
+              value={description}
+              onChange={(event) => {
+                setDescription(event.target.value);
+                clearFieldError("description");
+              }}
+              className="border-line bg-surface px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 min-h-0 focus-visible:border-blue-400 focus-visible:ring-0 dark:bg-surface"
+            />
+          </label>
           {fieldErrors.description && (
-            <p className="text-xs text-red-400">
-              {fieldErrors.description}
-            </p>
+            <p className="text-xs text-red-400">{fieldErrors.description}</p>
           )}
-        </label>
+          <WritingAssistance
+            fieldType="projectDescription"
+            fieldLabel="descrição do projeto"
+            value={description}
+            onApply={setDescription}
+          />
+        </div>
 
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="text-slate-400">Repositório (URL)</span>
@@ -267,15 +272,13 @@ export function ProjectForm({
             value={repositoryUrl}
             onChange={(event) => {
               setRepositoryUrl(event.target.value);
-              clearFieldError('repositoryUrl');
+              clearFieldError("repositoryUrl");
             }}
             placeholder="https://github.com/..."
             className="h-auto border-line bg-surface px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-0 dark:bg-surface"
           />
           {fieldErrors.repositoryUrl && (
-            <p className="text-xs text-red-400">
-              {fieldErrors.repositoryUrl}
-            </p>
+            <p className="text-xs text-red-400">{fieldErrors.repositoryUrl}</p>
           )}
         </label>
 
@@ -285,7 +288,7 @@ export function ProjectForm({
             value={demoUrl}
             onChange={(event) => {
               setDemoUrl(event.target.value);
-              clearFieldError('demoUrl');
+              clearFieldError("demoUrl");
             }}
             placeholder="https://..."
             className="h-auto border-line bg-surface px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-400 focus-visible:ring-0 dark:bg-surface"
@@ -309,7 +312,7 @@ export function ProjectForm({
           disabled={saving}
           className="h-auto rounded-full bg-blue-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-400"
         >
-          {saving ? 'Salvando...' : 'Salvar'}
+          {saving ? "Salvando..." : "Salvar"}
         </Button>
         <Button
           type="button"

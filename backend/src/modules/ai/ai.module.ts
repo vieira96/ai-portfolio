@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module.js';
 import { AiController } from './controllers/ai.controller.js';
 import { LlmProvider } from './providers/llm.provider.js';
 import { ChainedLlmProvider } from './providers/chained-llm.provider.js';
@@ -8,6 +9,7 @@ import { GeminiLlmProvider } from './providers/gemini/gemini.provider.js';
 import { AiService } from './services/ai.service.js';
 
 @Module({
+  imports: [AuthModule],
   controllers: [AiController],
   providers: [
     AiService,
