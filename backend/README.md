@@ -14,6 +14,7 @@ O planejamento de evolução está no [ROADMAP da raiz](../ROADMAP.md).
 - Docs: Swagger + Scalar em `/docs` (JSON cru em `/openapi.json`)
 - Validação: `class-validator` (pipe global) + Zod (`.env` fail-fast)
 - Logs em arquivo (`backend/logs/`, estilo `laravel.log`)
+- IA: providers Ollama, Groq e Gemini com cadeia de fallback
 - Testes: Vitest + Testcontainers + supertest
 
 ## Arquitetura
@@ -26,7 +27,10 @@ Controller (fino) → Service (regra + logs) → Repository (só Prisma) → Pos
 - Infra global em `src/infra/` (`database`, `storage`) — injeta em qualquer módulo
 - Config global (`ConfigModule` + Zod, falha no boot sem as vars)
 - Erros sempre no formato `{ statusCode, message, timestamp }`
-- A IA (futuro) fala com Services via Tools, nunca direto no banco
+- `ai/` fornece health check e assistência autenticada de escrita, reutilizando
+  a abstração `LlmProvider`; a sugestão de escrita não é persistida
+- `chat/` monta contexto de perfil, experiências, projetos, habilidades e
+  formação, processa perguntas via Redis/BullMQ e envia respostas por Socket.IO
 
 ## Estrutura
 
@@ -38,10 +42,14 @@ backend/
 │   ├── infra/database/ (Prisma)
 │   ├── infra/storage/ (arquivos)
 │   ├── modules/auth/ (login em cookie, guard, /me)
+│   ├── modules/ai/ (providers, health check e assistência de escrita)
+│   ├── modules/chat/ (histórico, fila e gateway Socket.IO)
 │   ├── modules/uploads/ (upload genérico)
 │   ├── modules/users/ (perfil)
+│   ├── modules/experiences/ (experiências e habilidades relacionadas)
 │   ├── modules/technologies/ (habilidades: CRUD gerenciado + GET público)
 │   ├── modules/projects/ (projetos + skills por upsert, GET paginado público)
+│   ├── modules/educations/ (formação acadêmica)
 │   └── app.module.ts + main.ts
 ├── prisma/
 │   ├── schema/<modulo>/ (1 pasta por domínio)
@@ -54,23 +62,24 @@ backend/
 
 ## Endpoints
 
-Referência viva no Scalar (`/docs`) — o README não lista endpoint (não escala).
-Fluxo-chave (ensina o padrão):
+Referência completa no Scalar (`/docs`). Principais fluxos:
 
 ```text
 POST /auth/login → Set-Cookie httpOnly → GET /auth/me
 POST /uploads (multipart file + folder) → { url } → PATCH /users/me { avatarUrl }
 POST /projects { skills: [{ name, category }] } → vincula/cria skills → GET /projects?page&size
+POST /ai/writing-assistance { fieldType, text } → { suggestion } (cookie autenticado; sem persistência)
+GET  /ai/health → status e modelo ativo
 ```
 
 ## Variáveis de ambiente
 
-Ver `backend/.env.example`. Obrigatórias: `DATABASE_URL`, `JWT_SECRET` (32+),
-`SEED_USER_NAME/EMAIL/PASSWORD`, `OLLAMA_URL`, `OLLAMA_CHAT_MODEL`,
-`REDIS_URL`, `CORS_ORIGINS` (uma ou mais origens separadas por vírgula;
-`OLLAMA_TIMEOUT_MS` tem default 60000). Opcionais: `GROQ_API_KEY`
-(sem ela, segue só Ollama; `GROQ_MODEL` e `GROQ_TIMEOUT_MS` têm defaults),
-perfil do seed, `APP_URL`, `NODE_ENV`.
+Ver `backend/.env.example`. A configuração inclui banco (`DATABASE_URL`),
+autenticação (`JWT_SECRET`), seed (`SEED_USER_*`), Redis (`REDIS_URL`), CORS
+(`CORS_ORIGINS`) e Ollama (`OLLAMA_URL`, `OLLAMA_CHAT_MODEL` e timeout). Groq e
+Gemini são opcionais e ativados quando suas respectivas chaves (`GROQ_API_KEY`,
+`GEMINI_API_KEY`) estão configuradas; modelos e timeouts também estão no arquivo
+de exemplo. Nunca commite chaves reais.
 
 ## Como rodar
 
@@ -95,8 +104,10 @@ IA (Groq, opcional — resposta em segundos em vez de CPU local):
 1. crie a key em `https://console.groq.com/keys` (grátis, sem cartão);
 2. configure no `.env`: `GROQ_API_KEY=<sua-key>` (`GROQ_MODEL` e `GROQ_TIMEOUT_MS`
    já têm defaults no `.env.example`);
-3. suba/reinicie o backend; com a key presente a cadeia vira `[groq, ollama]`
-   (Groq principal, Ollama como fallback só no rate limit); sem ela, só Ollama;
+3. suba/reinicie o backend; com Groq e Gemini configurados, a cadeia é
+   `Groq → Gemini → Ollama`; providers seguintes entram em caso de limite de uso
+   ou payload excedido. Sem Groq, Gemini pode ser o primeiro provider; sem
+   chaves cloud, a cadeia usa apenas Ollama;
 4. confira: `curl http://localhost:8000/ai/health` mostra o modelo ativo.
 
 URLs: API `:8000`, docs `/docs`, Postgres `:5432`, Redis `:6379`, Ollama `:11434`.

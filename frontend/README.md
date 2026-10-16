@@ -1,7 +1,8 @@
 # Frontend — Portfolio AI Agent
 
-App em **Next.js + React + Tailwind** do projeto Portfolio AI Agent.
-O roadmap completo está no [README da raiz](../README.md).
+Aplicação **Next.js + React + Tailwind** do Portfolio AI Agent. Inclui o site
+público, o dashboard administrativo e o editor de currículo ATS. O roadmap está
+em [ROADMAP.md](../ROADMAP.md).
 
 ## Stack
 
@@ -11,6 +12,10 @@ O roadmap completo está no [README da raiz](../README.md).
 - Fontes Manrope + DM Mono (`next/font`)
 - Validação: Zod nos forms (espelha o backend)
 - Testes: Vitest + Testing Library + jsdom
+
+No dashboard, a IA pode sugerir melhorias de escrita para Bio, headline,
+descrições de experiências e projetos. A sugestão é revisada em um modal e só
+altera o formulário após confirmação; salvar continua sendo uma ação separada.
 
 ## Arquitetura (BFF)
 
@@ -36,15 +41,18 @@ não `access_token`). Detalhes do contrato em `backend/README.md` (seção Chat)
 frontend/
 ├── src/
 │   ├── app/
-│   │   ├── api/ (BFF: repassa + cookie, sem regra)
+│   │   ├── api/ (BFF: encaminha chamadas autenticadas e valida contratos)
 │   │   ├── auth/login/ + dashboard/ (Server Components)
 │   │   └── layout + globals.css
 │   ├── components/
 │   │   ├── ui/ (primitivos: button, input, textarea, toast)
 │   │   ├── ui/inputs/ (image-picker)
 │   │   ├── auth/<tipo>/ + users/<tipo>/ (por domínio e tipo: forms, buttons)
+│   │   ├── ai/writing-assistance/ (modal reutilizável de sugestão de texto)
 │   │   ├── chat/ (widget: fab, panel, messages/, forms/, mock/ + specs ao lado)
-│   │   └── skills/ + projects/ (por domínio: sections, cards, modals)
+│   │   ├── resumes/ (editor ATS, templates, preview e exportação PDF)
+│   │   ├── skills/ + projects/ (por domínio: sections, cards, modals)
+│   │   └── users/ + experiences/ + educations/ (formulários e seções do dashboard)
 │   ├── types/chat/ (formato da API: pergunta, resposta, status, paginação)
 │   ├── lib/ (clients de domínio (skills, projects, chat) + auth server-only)
 │   ├── middlewares/ (lógica) + proxy.ts (entrada única, Next 16)
@@ -56,8 +64,10 @@ frontend/
 ## Telas
 
 Referência viva no browser — o README não cataloga tela (não escala).
-Fluxo-chave: `/auth/login` → cookie → `/dashboard` (perfil, habilidades e
-projetos em SSR; CRUD de skills/projetos via BFF `/api/*` com cookie).
+Fluxo-chave: `/auth/login` → cookie → `/dashboard` (perfil, habilidades,
+experiências, projetos e formação); o dashboard usa o BFF `/api/*` para CRUD e
+para solicitar sugestões de escrita à IA. `/dashboard/curriculo` carrega os
+dados cadastrados em um editor ATS com preview e exportação em PDF.
 
 ## Variáveis de ambiente
 
